@@ -29,11 +29,11 @@ def clear():
 def open_my_links():
     # كود فتح القناة والحساب الذي أثبت فاعليته عندك
     try:
-        os.system("termux-open-url https://t.me/pytho2n")
-        os.system("termux-open-url https://www.facebook.com/share/125SbeA95v2/")
+        os.system("termux-open-url https://t.me/m_oha0_2b")
+        os.system("termux-open-url https://www.facebook.com/profile.php?id=61576654590660")
     except:
-        webbrowser.open('https://t.me/pytho2n')
-        webbrowser.open('https://www.facebook.com/share/125SbeA95v2/')
+        webbrowser.open('https://t.me/m_oha0_2b')
+        webbrowser.open('https://www.facebook.com/profile.php?id=61576654590660')
 
 def moha_system_logo():
     clear()
@@ -43,7 +43,7 @@ def moha_system_logo():
     print(f"{b_white}┌────────────────────────────────────────────────────────┐")
     print(f"{b_white}│ {b_cyan}SYSTEM NAME   {b_white}: {b_yellow}MOHA-02 SYSTEM (ULTIMATE EDITION)    {b_white}│")
     print(f"{b_white}│ {b_cyan}DEVELOPER     {b_white}: {b_yellow}MOHA AL-SHALFAWI (@m_oha_02)         {b_white}│")
-    print(f"{b_white}│ {b_cyan}TELEGRAM      {b_white}: {b_yellow}t.me/pytho2n                         {b_white}│")
+    print(f"{b_white}│ {b_cyan}TELEGRAM      {b_white}: {b_yellow}https://t.me/m_oha0_2b                         {b_white}│")
     print(f"{b_white}│ {b_cyan}VERSION       {b_white}: {b_yellow}3.5 (STABLE UPDATE 2026)             {b_white}│")
     print(f"{b_white}└────────────────────────────────────────────────────────┘")
     print(f"\n{b_cyan}[!] Initializing engine... Please wait.{reset}")

